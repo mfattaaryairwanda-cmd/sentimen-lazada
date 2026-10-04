@@ -1,0 +1,6 @@
+data/20191002-reviews.csv
+data/lazada_processed.csv
+.ipynb_checkpoints/
+__pycache__/
+.venv/
+.DS_Store
