@@ -55,7 +55,7 @@ Tugasnya adalah mengklasifikasikan setiap ulasan ke tiga kelas: *negative*, *neu
 | 3 | Tidak mengubah kesimpulan: macro F1 model yang sama berbeda sekitar 0,005 atau kurang antar skenario | [9](#9-perbandingan-a-dan-b) |
 | 4 | Menurunkan overfit BoW, tetapi tidak menaikkan skor validasi secara berarti | [6](#6-mengapa-ada-baseline-dan-tuned-gridsearchcv-dan-cross-validation), [10](#10-insight) |
 | 5 | Neutral: recall 0,21 sampai 0,32, precision 0,16 sampai 0,17 | [10](#10-insight) |
-| 6 | Dirangkum di bagian keterbatasan | [11](#11-keterbatasan) |
+| 6 | Dirangkum di bagian keterbatasan dan kesimpulan | [11](#11-keterbatasan), [12](#12-kesimpulan) |
 
 ## Ringkasan
 
@@ -82,10 +82,11 @@ Pengantar: [Latar Belakang dan Studi Kasus](#latar-belakang-dan-studi-kasus) · 
 9. [Perbandingan A dan B](#9-perbandingan-a-dan-b)
 10. [Insight](#10-insight)
 11. [Keterbatasan](#11-keterbatasan)
-12. [Langkah lanjutan](#12-langkah-lanjutan)
-13. [Cara menjalankan](#13-cara-menjalankan)
-14. [Catatan proses](#14-catatan-proses)
-15. [Glosarium singkat](#15-glosarium-singkat)
+12. [Kesimpulan](#12-kesimpulan)
+13. [Langkah lanjutan](#13-langkah-lanjutan)
+14. [Cara menjalankan](#14-cara-menjalankan)
+15. [Catatan proses](#15-catatan-proses)
+16. [Glosarium singkat](#16-glosarium-singkat)
 
 ---
 
@@ -222,7 +223,7 @@ Parameter terbaik yang ditemukan:
 | BoW | `C=0,3`, `min_df=2`, `ngram (1,2)`, macro F1 CV 0,5931 | `C=0,03`, `min_df=2`, `ngram (1,2)`, macro F1 CV 0,5900 |
 | TF-IDF | `C=1`, `min_df=2`, `ngram (1,2)`, macro F1 CV 0,5927 | `C=1`, `min_df=2`, `ngram (1,2)`, macro F1 CV 0,5856 |
 
-TF-IDF memilih `C=1`, **sama dengan baseline**, sehingga hasil TF-IDF baseline dan tuned identik di semua tabel. Itu hasil yang sah, bukan error. Catatan: `C=1` ada di ujung atas grid, dan BoW di B memilih `C=0,03` yang ada di ujung bawah grid, sehingga nilai di luar grid belum diuji (lihat [Langkah lanjutan](#12-langkah-lanjutan)).
+TF-IDF memilih `C=1`, **sama dengan baseline**, sehingga hasil TF-IDF baseline dan tuned identik di semua tabel. Itu hasil yang sah, bukan error. Catatan: `C=1` ada di ujung atas grid, dan BoW di B memilih `C=0,03` yang ada di ujung bawah grid, sehingga nilai di luar grid belum diuji (lihat [Langkah lanjutan](#13-langkah-lanjutan)).
 
 ### Mengapa cross-validation
 
@@ -369,7 +370,20 @@ Perbandingan yang adil harus memakai test yang sepadan: **test A (unik)** diband
 - **Skor CV setelah tuning sedikit optimis** karena parameter dipilih dari data yang sama. Angka yang tidak bias adalah skor test.
 - **Hanya satu keluarga model** (Logistic Regression). Model lain belum dicoba.
 
-## 12. Langkah lanjutan
+## 12. Kesimpulan
+
+Proyek ini membandingkan Bag of Words dan TF-IDF dengan Logistic Regression untuk mengklasifikasikan ulasan Lazada ke tiga kelas sentimen, dengan dua cara menangani duplikat yang sama-sama bebas *data leakage*. Berdasarkan hasil di atas, jawaban atas empat pertanyaan awal adalah sebagai berikut.
+
+1. **Kinerja model terbatas dan timpang antar kelas.** Macro F1 berada di kisaran 0,59 sampai 0,60 pada semua skenario dan model. Akurasi 0,85 sampai 0,87 tidak lebih baik daripada menebak "positive" untuk semua ulasan (86,0% pada test A dan 87,2% pada test B), sehingga akurasi tidak boleh dijadikan ukuran keberhasilan. Model bekerja baik pada positive, cukup pada negative (recall 0,75 sampai 0,81 dengan precision 0,56 sampai 0,59 pada model tuned), dan lemah pada neutral (recall 0,21 sampai 0,32, precision 0,16 sampai 0,17).
+2. **Cara menangani duplikat tidak mengubah kesimpulan.** Macro F1 untuk model yang sama berbeda sekitar 0,005 atau kurang antara skenario A, test penuh B, dan test unik B. Temuan utama tidak bergantung pada pilihan metodologi.
+3. **Tuning mengurangi overfit, tetapi tidak menaikkan skor validasi secara berarti.** Selisih skor train dan validasi BoW pada learning curve turun dari 0,340 menjadi 0,278 di skenario A dan dari 0,357 menjadi 0,205 di skenario B, sementara macro F1 validasinya nyaris tidak berubah. Pada model tuned, selisih macro F1 antara BoW dan TF-IDF (0,0003 sampai 0,0041) lebih kecil daripada simpangan baku cross-validation, sehingga tidak ada pemenang yang jelas.
+4. **Neutral adalah kelas tersulit.** Dugaan penyebabnya ada pada label: rating 3 sering memuat pujian dan keluhan sekaligus, sehingga teks ulasannya tidak cukup memberi sinyal untuk membedakannya dari dua kelas lain.
+
+**Implikasi praktis.** Model ini cukup berguna untuk menyaring ulasan yang kemungkinan negatif agar ditinjau manusia, tetapi sekitar 4 dari 10 ulasan yang ditandai negatif adalah alarm palsu. Prediksi neutral sebaiknya tidak dipercaya.
+
+**Batas kesimpulan.** Hasil ini berlaku untuk data dan pengaturan yang dipakai di sini: label dari rating, ulasan yang memiliki teks (sekitar 54% dari data awal), satu split dengan `random_state=42`, dan satu keluarga model. Perbaikan berikutnya lebih mungkin datang dari kualitas label dan fitur daripada dari tuning lebih lanjut. Usulan konkretnya ada di bagian Langkah lanjutan.
+
+## 13. Langkah lanjutan
 
 - Perluas grid `C` (misalnya 0,003 sampai 10) dan jalankan ulang di A dan B dengan grid yang sama.
 - Normalisasi slang dan ganti emoji menjadi token teks (`emojipositif`, `emojinegatif`).
@@ -379,7 +393,7 @@ Perbandingan yang adil harus memakai test yang sepadan: **test A (unik)** diband
 - Ulangi evaluasi dengan beberapa `random_state` atau bootstrap untuk mendapat interval kepercayaan.
 - Validasi sebagian label neutral secara manual untuk mengukur seberapa ambigu sebenarnya.
 
-## 13. Cara menjalankan
+## 14. Cara menjalankan
 
 **Kebutuhan:** Python 3 dengan `pandas`, `numpy`, `scikit-learn`, `matplotlib`, `seaborn`, `wordcloud`, `PySastrawi`, dan `joblib`.
 
@@ -401,13 +415,13 @@ pip install -r requirements.txt
 - Gambar distribusi rating dan distribusi sentimen hanya disimpan oleh notebook B.
 - Sel learning curve dan GridSearchCV memakai `n_jobs=1` supaya hemat RAM. Di skenario B (87 ribu data) bagian ini bisa memakan waktu cukup lama.
 
-## 14. Catatan proses
+## 15. Catatan proses
 
 - Pada iterasi awal, pengecekan menemukan **teks bocor antara train dan test di skenario A** karena sel dedup terlewat saat notebook dijalankan tidak berurutan. Sejak itu ditambahkan `assert` di bagian split.
 - Tabel perbandingan awal sempat menampilkan skor baseline dan tuned yang sama karena sel ringkasan memakai variabel lama yang tersisa di memori kernel. Sekarang `ringkas` didefinisikan di sel yang sama dengan tabelnya.
 - Kurva learning curve yang menunjukkan jumlah data training jauh lebih besar dari yang seharusnya adalah petunjuk pertama adanya masalah split. Membandingkan sumbu X dengan ukuran data adalah pengecekan yang murah dan berguna.
 
-## 15. Glosarium singkat
+## 16. Glosarium singkat
 
 | Istilah | Arti |
 |---|---|
